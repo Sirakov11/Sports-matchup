@@ -4,9 +4,11 @@ const config: { [key: string]: Knex.Config } = {
   development: {
     client: "pg",
     connection: {
-      database: "sports-matchup",
+      database: "sports_matchup",
       user: "postgres",
-      password: "postgres"
+      password: process.env.DB_PASSWORD,
+      host: "127.0.0.1", 
+      port: 5432   
     },
     pool: {
       min: 2,
@@ -14,6 +16,12 @@ const config: { [key: string]: Knex.Config } = {
     },
     migrations: {
       tableName: "knex_migrations"
+    },
+    seeds: {
+      directory: './seeds'           
     }
+    
   }
 };
+
+module.exports = {config}

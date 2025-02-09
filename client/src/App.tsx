@@ -1,11 +1,27 @@
-import './App.css'
+import { FC, useState } from 'react';
+import './App.css';
+import LoginPage from './LoginPage';
+import SportSelectionPage from './SportSelectionPage';
+import ProfileSetupPage from './ProfileSetupPage';
+import UsersList from './UsersList.tsx';
 
-function App() {
+const App: FC = () => {
+  const [currentPage, setCurrentPage] = useState<'login' | 'sport' | 'profile' | 'users'>('login');
+
   return (
     <div>
-      <h1>Hello, World!</h1>
+      {currentPage === 'login' && (
+        <LoginPage onLoginSuccess={() => setCurrentPage('sport')} />
+      )}
+      {currentPage === 'sport' && (
+        <SportSelectionPage onContinue={() => setCurrentPage('profile')} />
+      )}
+      {currentPage === 'profile' && (
+        <ProfileSetupPage onProfileComplete={() => setCurrentPage('users')} />
+      )}
+      {currentPage === 'users' && <UsersList />}
     </div>
   );
-}
+};
 
 export default App;

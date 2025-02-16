@@ -1,16 +1,44 @@
 import express from "express";
+import type { RequestHandler, Request } from "express";
 import { db } from "./database.js";
 import * as bcrypt from "bcrypt";
-import { Request, Response } from "express";
-// import jwt, { Secret } from "jsonwebtoken";
+import cookieParser from "cookie-parser";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 import cors from 'cors';
-import { DB } from "kysely-codegen";
-import { userService } from "./user_service.js";
+// import { userService } from "./user_service.js";
 const app = express();
 const port = process.env.PORT || 3000;
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const generateToken = (userId: number) => {
+  return jwt.sign(
+    { userId },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  )
+};
+
+interface AuthRequest extends Request {
+  userId: string;
+}
+
+const authMiddleware: RequestHandler = (req, res, next) => {
+  try {
+    if (!req.cookies.jwt) res.sendStatus(401);
+    const { userId } = jwt.verify(req.cookies.jwt, JWT_SECRET) as JwtPayload;
+    (req as AuthRequest).userId = userId;
+    next();
+  } catch (error) {
+    res.sendStatus(401);
+  }
+};
+
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
 app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
@@ -19,50 +47,116 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-app.get("/users", async (req, res) => {
+app.get("/matchup", authMiddleware, async (req, res) => {
   try {
-    const { sport_id, experience, weight, height } = req.query;
-    let query = db.selectFrom("users")
-      .leftJoin("sports", "users.sport_id", "sports.id");
-    if (sport_id) {
-      query = query.where("users.sport_id", "=", +sport_id);
+    const user = await db
+      .selectFrom("users")
+      .where("users.id", "=", +(req as AuthRequest).userId)
+      .selectAll()
+      .executeTakeFirstOrThrow();
+
+    if (!user.sport_id || !user.weight || !user.height || !user.experience) {
+      res.sendStatus(400)
+      return
     }
-    if (experience) {
-      query = query.where("users.experience", "=", experience as string);
-    }
-    if (weight) {
-      query = query.where("users.weight", "=", +weight);
-    }
-    if (height) {
-      query = query.where("users.height", "=", +height);
-    }
-    const users = await query.select(["users.name", "sports.name as sport_name","users.weight", "users.experience", "users.height"]).execute();
-    res.status(200).json(users);
+
+    // Define weight and height intervals (+- 10% of user's values)
+    const weightInterval = {
+      min: Math.round(user.weight * 0.9),
+      max: Math.round(user.weight * 1.1)
+    };
+    const heightInterval = {
+      min: Math.round(user.height * 0.9),
+      max: Math.round(user.height * 1.1)
+    };
+
+    // Build query for matching users
+    let query = db
+      .selectFrom("users")
+      .leftJoin("sports", "users.sport_id", "sports.id")
+      // Exclude current user
+      .where("users.id", "!=", user.id)
+      // Match sport
+      .where("users.sport_id", "=", user.sport_id)
+      // Match experience level
+      .where("users.experience", "=", user.experience)
+      // Weight within interval
+      .where("users.weight", ">=", weightInterval.min)
+      .where("users.weight", "<=", weightInterval.max)
+      // Height within interval
+      .where("users.height", ">=", heightInterval.min)
+      .where("users.height", "<=", heightInterval.max);
+
+    const matchingUsers = await query
+      .select([
+        "users.id",
+        "users.name",
+        "sports.name as sport_name",
+        "users.weight",
+        "users.height",
+        "users.experience"
+      ])
+      .execute();
+
+    res.status(200).json(matchingUsers);
+
   } catch (err) {
     console.log(err);
-    res.status(500).send("Error fetching user");
+    res.status(500).json({ error: "Error finding matches" });
   }
 });
 
-app.get("/users/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    // const user = await db
-    //   .selectFrom("users")
-    //   .where("users.id", "=", +id)
-    //   .leftJoin("sports", "users.sport_id", "sports.id")
-    //   .select(["users.name", "sports.name as sport_name"])
-    //   .executeTakeFirstOrThrow();
-    const user = await userService.findById(+id);
-    res.status(200).json(user);
-  } catch (err) {
-    console.log(err);
-    res.status(500).send("Error fetching user");
-  }
-});
-app.post("/users/:id", async (req, res) => {
-  const { weight, experience, height, sport_id } = req.body; // Вземаме полетата от тялото на заявката
-  const { id } = req.params; // Вземаме ID-то на потребителя от параметрите на URL
+
+// app.get("/users", async (req, res) => {
+//   try {
+//     const { sport_id, experience, weight, height } = req.query;
+//     let query = db.selectFrom("users")
+//       .leftJoin("sports", "users.sport_id", "sports.id");
+//     if (sport_id) {
+//       query = query.where("users.sport_id", "=", +sport_id);
+//     }
+//     if (experience) {
+//       query = query.where("users.experience", "=", experience as string);
+//     }
+//     if (weight) {
+//       query = query.where("users.weight", "=", +weight);
+//     }
+//     if (height) {
+//       query = query.where("users.height", "=", +height);
+//     }
+//     const users = await query.select(["users.name", "sports.name as sport_name", "users.weight", "users.experience", "users.height"]).execute();
+//     res.status(200).json(users);
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ error: "Error fetching user" });
+//   }
+// });
+
+// app.get("/users/:id", async (req, res) => {
+//   try {
+//     const id = req.params.id;
+//     // const user = await db
+//     //   .selectFrom("users")
+//     //   .where("users.id", "=", +id)
+//     //   .leftJoin("sports", "users.sport_id", "sports.id")
+//     //   .select(["users.name", "sports.name as sport_name"])
+//     //   .executeTakeFirstOrThrow();
+//     const user = await userService.findById(+id);
+//     res.status(200).json(user);
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ error: "Error fetching user" });
+//   }
+// });
+
+app.get("/users/profile-settings", authMiddleware, async (req, res) => {
+  const userId = (req as AuthRequest).userId;
+  res.sendStatus(501) // TODO: not implemented
+})
+
+app.post("/users/profile-settings", authMiddleware, async (req, res) => {
+  const userId = (req as AuthRequest).userId
+  const { weight, experience, height, sport_id } = req.body; // Вземаме полетата от тялото на заявката 
 
   try {
     await db
@@ -73,34 +167,17 @@ app.post("/users/:id", async (req, res) => {
         height: height,
         sport_id: sport_id,
       })
-      .where("id", "=", +id)
+      .where("id", "=", +userId)
       .execute();
 
-    res.status(200).send("Successfully updated user");
+    res.status(200).send();
   } catch (err) {
     console.log(err);
-    res.status(500).send("Error updating user");
+    res.status(500).json({ error: "Error updating user" });
   }
 });
 
 
-app.get("/users/sport/:sportId", async (req, res) => {
-  try {
-    const { sportId } = req.params;
-    console.log(sportId)
-    const users = await db
-      .selectFrom("users")
-      .where("users.sport_id", "=", +sportId)
-      .leftJoin("sports", "users.sport_id", "sports.id")
-      .select(["users.name", "sports.name as sport_name"])
-      .execute();
-
-    res.status(200).json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching users by sport");
-  }
-});
 app.get("/sports", async (req, res) => {
   try {
     const sports = await db.selectFrom("sports").selectAll().execute();
@@ -108,29 +185,51 @@ app.get("/sports", async (req, res) => {
   }
   catch (err) {
     console.log(err);
-    res.status(500).send("Error getting sports");
+    res.status(500).json({ error: "Error getting sports" });
   }
 })
 
+app.get("/login", (req, res) => {
+  try {
+    jwt.verify(req.cookies.jwt, JWT_SECRET) as JwtPayload;
+    res.status(200).send();
+  } finally {
+    // fallback if no cookie or wrong cookie or expired cookie
+    res.status(401).send()
+  }
+})
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("jwt").status(200).send()
+})
+
 app.post("/login", async (req, res) => {
-  console.log(process.env.DATABASE_URL);
+
   try {
     const { name, password } = req.body;
 
     const user = await db
       .selectFrom("users")
       .where("name", "=", name)
-      .select("hashed_password")
+      .selectAll()
       .executeTakeFirstOrThrow();
 
     if (bcrypt.compareSync(password, user.hashed_password)) {
-      res.status(200).send("login ok");
+      const { hashed_password, ...viewUser } = user;
+      // sending a session jwt cookie to the frontend. Adding user.id as content so we know which user is sending in requests
+      const token = generateToken(user.id);
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+      res.status(200).json(viewUser);
     } else {
       throw Error("wrong password");
     }
   } catch (err) {
     console.log(err);
-    res.status(500).send("Error logging in");
+    res.status(500).json({ error: "Error logging in" });
   }
 });
 
@@ -140,7 +239,7 @@ app.post("/register", async (req, res) => {
 
     // Validate required fields
     if (!name || !password) {
-      res.status(400).send("Name and password are required");
+      res.status(400).json({ error: "Name and password are required" });
       return;
     }
 
@@ -152,7 +251,7 @@ app.post("/register", async (req, res) => {
       .executeTakeFirst();
 
     if (existingUser) {
-      res.status(409).send("User already exists");
+      res.status(409).json({ error: "User already exists" });
       return;
     }
 
@@ -167,12 +266,13 @@ app.post("/register", async (req, res) => {
         hashed_password: hashedPassword,
       })
       .returningAll()
-      .execute();
+      .executeTakeFirstOrThrow();
 
-    res.status(201).json({ message: "User registered successfully", user: newUser });
+    const { hashed_password, ...viewUser } = newUser;
+    res.status(201).json({ message: "User registered successfully", user: viewUser });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error registering user");
+    res.status(500).json({ error: "Error registering user" });
   }
 });
 app.get("/users/filter", async (req, res) => {
@@ -191,6 +291,6 @@ app.get("/users/filter", async (req, res) => {
     res.status(200).json(users);
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error fetching filtered users");
+    res.status(500).json({ error: "Error fetching filtered users" });
   }
 });

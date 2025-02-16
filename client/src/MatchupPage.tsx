@@ -1,23 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
+// import { useNavigate, useParams } from "react-router";
 
 interface User {
-  id: number;
-  name: string;
-  sport_name?: string;
+  id: number
+  name: string
+  sport_name?: string
 }
 
-const UsersList = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const sportId = localStorage.getItem("sportId"); // Вземи избрания спорт
+const MatchupPage = () => {
+  const [users, setUsers] = useState<User[]>([])
 
   useEffect(() => {
-    if (!sportId) return;
-
-    fetch(`http://localhost:3000/users/sport/${sportId}`)
+    fetch(`http://localhost:3000/matchup`, {
+      credentials: 'include',
+    })
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch((err) => console.error("Error fetching users:", err));
-  }, [sportId]);
+  }, []);
 
   return (
     <div className="container mt-5">
@@ -40,7 +40,7 @@ const UsersList = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default UsersList;
+export default MatchupPage

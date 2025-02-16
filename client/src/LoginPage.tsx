@@ -1,37 +1,29 @@
-import { FC, FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { useAuth } from './auth';
+import { LoginCredentials } from './auth/auth-service';
 
-interface LoginPageProps {
-  onLoginSuccess: () => void;
-}
-
-const LoginPage: FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
+const LoginPage = () => {
   const [error, setError] = useState('');
+  const { login } = useAuth();
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setError('');
 
-    try {
-      const response = await fetch('http://localhost:3000/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, password }),
-      });
-      const data = await response.json();
+    const { name, password } = Object.fromEntries(
+      new FormData(e.currentTarget).entries()
+    );
 
-      if (response.ok) {
-        localStorage.setItem('user', JSON.stringify(data));
-        onLoginSuccess();
-      } else {
-        setError(data.error || 'Login failed');
-      }
-    } catch (err) {
-      setError('Error connecting to server');
-      console.error('Login error:', err);
+    const credentials: LoginCredentials = {
+      name: name.toString(),
+      password: password.toString(),
+    };
+
+    try{
+      await login(credentials);
+    } catch (error){
+      console.log(error);
+      setError('Error logging in. Please try again');
     }
   };
 
@@ -42,20 +34,19 @@ const LoginPage: FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="card">
             <div className="card-body">
               <h2 className="text-center mb-4">Hello sportsman!</h2>
-              {error && (
+              {error}
+              {error && 
                 <div className="alert alert-danger" role="alert">
                   {error}
                 </div>
-              )}
+              }
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="name" className="form-label">Name</label>
                   <input
                     type="text"
                     className="form-control"
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    name="name"
                     required
                   />
                 </div>
@@ -64,13 +55,11 @@ const LoginPage: FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <input
                     type="password"
                     className="form-control"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    name="password"
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary w-100">Register</button>
+                <button type="submit" className="btn btn-primary w-100">Login</button>
               </form>
             </div>
           </div>

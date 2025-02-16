@@ -1,27 +1,29 @@
-import { FC, useState } from 'react';
-import './App.css';
-import LoginPage from './LoginPage';
-import SportSelectionPage from './SportSelectionPage';
-import ProfileSetupPage from './ProfileSetupPage';
-import UsersList from './UsersList.tsx';
+import { Routes, Route, Navigate } from 'react-router'
+import './App.css'
+import LoginPage from './LoginPage'
+import RegisterPage from './RegisterPage.tsx'
+import ProfileSetupPage from './ProfileSetupPage'
+import MatchupPage from './MatchupPage.tsx'
+import { PublicOutlet, PrivateOutlet } from './auth/Outlets.tsx'
+import { AuthProvider } from './auth/index.tsx'
 
-const App: FC = () => {
-  const [currentPage, setCurrentPage] = useState<'login' | 'sport' | 'profile' | 'users'>('login');
-
+const App = () => {
   return (
-    <div>
-      {currentPage === 'login' && (
-        <LoginPage onLoginSuccess={() => setCurrentPage('sport')} />
-      )}
-      {currentPage === 'sport' && (
-        <SportSelectionPage onContinue={() => setCurrentPage('profile')} />
-      )}
-      {currentPage === 'profile' && (
-        <ProfileSetupPage onProfileComplete={() => setCurrentPage('users')} />
-      )}
-      {currentPage === 'users' && <UsersList />}
-    </div>
-  );
-};
+    <AuthProvider>
+      <Routes>
+        <Route element={<PrivateOutlet />}>
+          <Route path='/' element={<Navigate to='matchup' replace />} />
+          <Route path='matchup' element={<MatchupPage />} />
+          <Route path='profile' element={<ProfileSetupPage />} />
+        </Route>
 
-export default App;
+        <Route element={<PublicOutlet />}>
+          <Route path='login' element={<LoginPage />} />
+          <Route path='register' element={<RegisterPage />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
+  )
+}
+
+export default App

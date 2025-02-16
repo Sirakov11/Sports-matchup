@@ -1,17 +1,17 @@
-import { FC, FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
-interface RegisterPageProps {
-  onRegisterSuccess: () => void;
-}
-
-const RegisterPage: FC<RegisterPageProps> = ({ onRegisterSuccess }) => {
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
+const RegisterPage = () => {
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     setError('');
+
+    const { name, password } = Object.fromEntries(
+      new FormData(e.currentTarget).entries()
+    );
 
     try {
       const response = await fetch('http://localhost:3000/register', {
@@ -24,7 +24,7 @@ const RegisterPage: FC<RegisterPageProps> = ({ onRegisterSuccess }) => {
       const data = await response.json();
 
       if (response.ok) {
-        onRegisterSuccess();
+        navigate('/profile');
       } else {
         setError(data.error || 'Registration failed');
       }
@@ -54,9 +54,7 @@ const RegisterPage: FC<RegisterPageProps> = ({ onRegisterSuccess }) => {
                   <input
                     type="text"
                     className="form-control"
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    name="name"
                     required
                   />
                 </div>
@@ -67,9 +65,7 @@ const RegisterPage: FC<RegisterPageProps> = ({ onRegisterSuccess }) => {
                   <input
                     type="password"
                     className="form-control"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    name="password"
                     required
                   />
                 </div>

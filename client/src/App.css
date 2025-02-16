@@ -2,10 +2,11 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  /* padding: 2rem; */
   text-align: center;
   font-family: Arial, sans-serif;
   background-color: #f0f4f8;
+  min-height: 100vh;
 }
 body {
   /*background-image: url('./assets/background1.png'); */
@@ -78,4 +79,28 @@ p {
 
 .login-button:active {
   transform: scale(0.98);
+}
+
+.overlay {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  inset: 0;
+  background: rgba(78, 156, 211, 0.9);
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+nav {
+  display: flex;
+  position: sticky;
+  background-color: white;
+  top: 0;
+  z-index: 2;
+  gap: 5px;
+  height: 40px;
+  align-items: flex-end;
+  justify-content: end;
 }

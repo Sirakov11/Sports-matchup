@@ -106,7 +106,54 @@ app.get("/matchup", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/mutuallyliked", authMiddleware, async (req, res) => {
+  try {
+    const userId = +(req as AuthRequest).userId;
 
+    const mutualLikes = await db
+      .selectFrom("matchups as m1")
+      .innerJoin("matchups as m2", (join) => 
+        join.onRef("m1.liker", "=", "m2.liked")
+          .onRef("m1.liked", "=", "m2.liker")
+      )
+      .innerJoin("users", "users.id", "m1.liked")
+      .leftJoin("sports", "users.sport_id", "sports.id")
+      .where("m1.liker", "=", userId)
+      .select([
+        "users.id",
+        "users.name",
+        "sports.name as sport_name",
+        "users.weight",
+        "users.height",
+        "users.experience"
+      ])
+      .execute();
+
+    res.status(200).json(mutualLikes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error retrieving mutual likes" });
+  }
+});
+app.post("/like", authMiddleware, async (req, res) => {
+  try {
+    const likerId = +(req as AuthRequest).userId;
+    const { likedId } = req.body;
+
+    await db
+      .insertInto("matchups")
+      .values({
+        liker: likerId,
+        liked: likedId
+      })
+      .execute();
+
+    res.status(200).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error saving like" });
+  }
+});
 // app.get("/users", async (req, res) => {
 //   try {
 //     const { sport_id, experience, weight, height } = req.query;
@@ -151,8 +198,26 @@ app.get("/matchup", authMiddleware, async (req, res) => {
 
 app.get("/users/profile-settings", authMiddleware, async (req, res) => {
   const userId = (req as AuthRequest).userId;
-  res.sendStatus(501) // TODO: not implemented
-})
+  
+  try {
+    const userSettings = await db
+      .selectFrom("users")
+      .select(["sport_id", "weight", "height", "experience"])
+      .where("id", "=", +userId)
+      .executeTakeFirst();
+      
+    if (!userSettings) {
+      res.status(404).json({ error: "User settings not found" });
+      return;
+    }
+    
+    res.json(userSettings);
+  } catch (err) {
+    console.error("Error fetching profile settings:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 app.post("/users/profile-settings", authMiddleware, async (req, res) => {
   const userId = (req as AuthRequest).userId
@@ -181,13 +246,14 @@ app.post("/users/profile-settings", authMiddleware, async (req, res) => {
 app.get("/sports", async (req, res) => {
   try {
     const sports = await db.selectFrom("sports").selectAll().execute();
+    console.log("Fetched sports from DB:", sports); // Лог за проверка
     res.status(200).json(sports);
-  }
-  catch (err) {
+  } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Error getting sports" });
   }
-})
+});
+
 
 app.get("/login", (req, res) => {
   try {
@@ -281,11 +347,7 @@ app.get("/users/filter", async (req, res) => {
 
     const users = await db
       .selectFrom("users")
-      //.where("users.sport_id", "=", +sportId)
-      //.where("users.experience_level", "=", experienceLevel)
       .leftJoin("sports", "users.sport_id", "sports.id")
-      //.where("users.sport_id", "=", +sportId)
-      //.select(["users.name", "sports.name as sport_name", "users.experience_level"])
       .execute();
 
     res.status(200).json(users);
@@ -294,3 +356,5 @@ app.get("/users/filter", async (req, res) => {
     res.status(500).json({ error: "Error fetching filtered users" });
   }
 });
+
+

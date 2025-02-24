@@ -4,22 +4,10 @@ import { Sport } from './models/Sport';
 const ProfileSetupPage = () => {
   const [sports, setSports] = useState<Sport[]>([]);
   const [selectedSport, setSelectedSport] = useState<Sport>();
-
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  //TODO: use efect to set the original user values
-
-  // useEffect(() => {
-  //   fetch("http://localhost:3000/users/profile-settings")
-  //     .then(res => res.json())
-  //     .then(data => 
-  //       console.log('current settings', data)
-  //       // TODO: set form based on result here
-  //     )
-  //     .catch((err) => console.error("Error fetching sports:", err));
-  // }, []);
-
+  // Извличане на спортовете от сървъра
   useEffect(() => {
     fetch("http://localhost:3000/sports", { credentials: "include" })
       .then((res) => res.json())
@@ -27,12 +15,35 @@ const ProfileSetupPage = () => {
       .catch((err) => console.error("Error fetching sports:", err));
   }, []);
 
+  // Извличане на текущите настройки на потребителя и попълване на формата
+  useEffect(() => {
+    fetch("http://localhost:3000/users/profile-settings", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        console.log('current settings', data);
+
+        if (data.sport_id) {
+          setSelectedSport(sports.find(s => s.id === data.sport_id));
+        }
+
+        // Автоматично попълване на формата
+        const form = document.querySelector("form") as HTMLFormElement;
+        if (form) {
+          form.weight.value = data.weight || "";
+          form.height.value = data.height || "";
+          form.experience.value = data.experience || "";
+          form.sport_id.value = data.sport_id || "";
+        }
+      })
+      .catch(err => console.error("Error fetching user settings:", err));
+  }, [sports]);
+
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     const { weight, height, experience, sport_id } = Object.fromEntries(
       new FormData(e.currentTarget).entries()
-    )
-    
+    );
+
     try {
       const response = await fetch('http://localhost:3000/users/profile-settings', {
         method: 'POST',
@@ -42,7 +53,7 @@ const ProfileSetupPage = () => {
         },
         body: JSON.stringify({ sport_id, weight, height, experience }),
       });
-      
+
       if (response.ok) {
         setSuccess('Profile saved successfully');
       } else {
@@ -53,7 +64,7 @@ const ProfileSetupPage = () => {
       setError('Error connecting to server');
       console.error('Saving error:', err);
     }
-  }
+  };
 
   return (
     <div className="container mt-5">
@@ -63,14 +74,24 @@ const ProfileSetupPage = () => {
             <div className="card-body">
               <h2 className="text-center mb-4">Complete Your Profile</h2>
               <form onSubmit={handleSubmit}>
-                <p>Sel sport {selectedSport?.name}</p>
+                <p>Selected Sport: {selectedSport?.name || "None"}</p>
                 <div className="mb-3">
                   <label htmlFor="sport_id" className="form-label">Choose Your Sport</label>
-                  <select className="form-select" name="sport_id" required>
+                  <select 
+                    className="form-select" 
+                    name="sport_id" 
+                    required 
+                    onChange={(e) => {
+                      const selected = sports.find(s => s.id === Number(e.target.value));
+                      setSelectedSport(selected);
+                    }}
+                  >
                     <option value="">Select sport</option>
-                    {sports.map((sport) => 
-                      <option key={sport.id} value={sport.id} onClick={() => setSelectedSport(sport)}>{sport.name}</option>
-                    )}
+                    {sports.map((sport) => (
+                      <option key={sport.id} value={sport.id}>
+                        {sport.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="mb-3">

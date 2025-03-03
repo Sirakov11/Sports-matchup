@@ -33,6 +33,7 @@ const ProfileSetupPage = () => {
           form.height.value = data.height || "";
           form.experience.value = data.experience || "";
           form.sport_id.value = data.sport_id || "";
+          form.phone_number.value = data.phone_number || "";
         }
       })
       .catch(err => console.error("Error fetching user settings:", err));
@@ -40,7 +41,7 @@ const ProfileSetupPage = () => {
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    const { weight, height, experience, sport_id } = Object.fromEntries(
+    const { weight, height, experience, sport_id, phone_number } = Object.fromEntries(
       new FormData(e.currentTarget).entries()
     );
 
@@ -51,7 +52,7 @@ const ProfileSetupPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sport_id, weight, height, experience }),
+        body: JSON.stringify({ sport_id, weight, height, experience, phone_number }),
       });
 
       if (response.ok) {
@@ -111,6 +112,17 @@ const ProfileSetupPage = () => {
                     <option value="advanced">Advanced</option>
                     <option value="professional">Professional</option>
                   </select>
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="phone_number" className="form-label">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    className="form-control" 
+                    name="phone_number" 
+                    placeholder="e.g., 359888123456"
+                    pattern="[0-9]+"
+                  />
+                  <small className="text-muted">Enter your phone number without '+' (e.g., 359888123456)</small>
                 </div>
                 {error && (
                   <div className="alert alert-danger" role="alert">

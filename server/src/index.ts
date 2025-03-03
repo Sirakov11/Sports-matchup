@@ -74,6 +74,7 @@ app.get("/matchup", authMiddleware, async (req, res) => {
     let query = db
       .selectFrom("users")
       .leftJoin("sports", "users.sport_id", "sports.id")
+      //.leftJoin("matchups", "users.id", "matchups.liked")
       // Exclude current user
       .where("users.id", "!=", user.id)
       // Match sport
@@ -196,15 +197,45 @@ app.post("/like", authMiddleware, async (req, res) => {
 //   }
 // });
 
+
+interface Database {
+  messages: {
+    id: number;
+    senderId: number;
+    receiverId: number;
+    content: string;
+    timestamp: Date;
+  };
+  users: {
+    id: number;
+    name: string;
+    hashed_password: string;
+    sport_id: number | null;
+    weight: number | null;
+    height: number | null;
+    experience: string | null;
+    phone_number: string | null;
+  };
+  sports: {
+    id: number;
+    name: string;
+  };
+  matchups: {
+    id: number;
+    liker: number;
+    liked: number;
+  };
+}
+
 app.get("/users/profile-settings", authMiddleware, async (req, res) => {
   const userId = (req as AuthRequest).userId;
   
   try {
     const userSettings = await db
       .selectFrom("users")
-      .select(["sport_id", "weight", "height", "experience"])
+      .select(["sport_id", "weight", "height", "experience", "phone_number"])
       .where("id", "=", +userId)
-      .executeTakeFirst();
+      .executeTakeFirstOrThrow();
       
     if (!userSettings) {
       res.status(404).json({ error: "User settings not found" });
@@ -221,7 +252,7 @@ app.get("/users/profile-settings", authMiddleware, async (req, res) => {
 
 app.post("/users/profile-settings", authMiddleware, async (req, res) => {
   const userId = (req as AuthRequest).userId
-  const { weight, experience, height, sport_id } = req.body; // Вземаме полетата от тялото на заявката 
+  const { weight, experience, height, sport_id, phone_number } = req.body;
 
   try {
     await db
@@ -231,6 +262,7 @@ app.post("/users/profile-settings", authMiddleware, async (req, res) => {
         experience: experience,
         height: height,
         sport_id: sport_id,
+        phone_number: phone_number,
       })
       .where("id", "=", +userId)
       .execute();
@@ -357,4 +389,92 @@ app.get("/users/filter", async (req, res) => {
   }
 });
 
+// Add this interface near the top of your file with other interfaces
+interface Database {
+  messages: {
+    id: number;
+    senderId: number;
+    receiverId: number;
+    content: string;
+    timestamp: Date;
+  };
+  users: {
+    id: number;
+    name: string;
+    hashed_password: string;
+    sport_id: number | null;
+    weight: number | null;
+    height: number | null;
+    experience: string | null;
+    phone_number: string | null;
+  };
+  sports: {
+    id: number;
+    name: string;
+  };
+  matchups: {
+    id: number;
+    liker: number;
+    liked: number;
+  };
+}
+
+// Add these endpoints before the last app.listen call
+
+// app.get("/messages/:userId", authMiddleware, async (req, res) => {
+//   try {
+//     const currentUserId = +(req as AuthRequest).userId;
+//     const otherUserId = +req.params.userId;
+
+//     const messages = await db
+//       .selectFrom("messages")
+//       .where((eb) => eb.or([
+//         eb.and([
+//           eb("messages.senderId", "=", currentUserId),
+//           eb("messages.receiverId", "=", otherUserId)
+//         ]),
+//         eb.and([
+//           eb("messages.senderId", "=", otherUserId),
+//           eb("messages.receiverId", "=", currentUserId)
+//         ])
+//       ]))
+//       .select(['messages.id', 'messages.senderId', 'messages.content', 'messages.timestamp'] as const)
+//       .orderBy('messages.timestamp', 'asc')
+//       .execute();
+
+//     res.json(messages);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Error fetching messages" });
+//   }
+// });
+
+// app.post("/messages/:userId", authMiddleware, async (req, res) => {
+//   try {
+//     const senderId = +(req as AuthRequest).userId;
+//     const receiverId = +req.params.userId;
+//     const { content } = req.body;
+
+//     const message = await db
+//       .insertInto("messages")
+//       .values({
+//         senderId: senderId,
+//         receiverId: receiverId,
+//         content: content,
+//         timestamp: new Date()
+//       })
+//       .returningAll()
+//       .executeTakeFirstOrThrow();
+
+//     res.status(201).json({
+//       id: message.id,
+//       senderId: message.senderId,
+//       content: message.content,
+//       timestamp: message.timestamp
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Error sending message" });
+//   }
+// });
 

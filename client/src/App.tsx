@@ -11,19 +11,21 @@ import { AuthProvider } from './auth/index.tsx'
 const App = () => {
   return (
     <AuthProvider>
-      <Routes>
-        <Route element={<PrivateOutlet />}>
-          <Route path='/' element={<Navigate to='matchup' replace />} />
-          <Route path='matchup' element={<MatchupPage />} />
-          <Route path='profile' element={<ProfileSetupPage />} />
-          <Route path='mutuallyliked' element={<MutuallyLikedPage />} />
-        </Route>
+      <div className="sport-bg">
+        <Routes>
+          <Route element={<PrivateOutlet />}>
+            <Route path='/' element={<Navigate to='matchup' replace />} />
+            <Route path='matchup' element={<MatchupPage />} />
+            <Route path='profile' element={<ProfileSetupPage />} />
+            <Route path='mutuallyliked' element={<MutuallyLikedPage />} />
+          </Route>
 
-        <Route element={<PublicOutlet />}>
-          <Route path='login' element={<LoginPage />} />
-          <Route path='register' element={<RegisterPage />} />
-        </Route>
-      </Routes>
+          <Route element={<PublicOutlet />}>
+            <Route path='login' element={<LoginPage />} />
+            <Route path='register' element={<RegisterPage />} />
+          </Route>
+        </Routes>
+      </div>
     </AuthProvider>
   )
 }

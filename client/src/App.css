@@ -15,6 +15,9 @@ body {
   background-attachment: fixed; 
   margin: 0;
   padding: 0;
+  background-color: #e6f3ff;  /* Baby blue background */
+  background-image: linear-gradient(45deg, #e6f3ff 0%, #ffffff 100%);
+  min-height: 100vh;
 }
 header {
   /*background-image: url('./assets/background1.png'); */
@@ -58,8 +61,14 @@ p {
   margin: 1rem auto;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   max-width: 600px;
+  border: none;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
 }
 
 .login-button {
@@ -96,11 +105,185 @@ p {
 nav {
   display: flex;
   position: sticky;
-  background-color: white;
+  background-color: #1a73e8;
   top: 0;
   z-index: 2;
-  gap: 5px;
-  height: 40px;
-  align-items: flex-end;
-  justify-content: end;
+  padding: 10px 20px;
+  height: auto;
+  align-items: center;
+  justify-content: flex-end;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+nav a, nav button {
+  color: white;
+  text-decoration: none;
+  padding: 6px 12px;
+  margin: 0 5px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+nav a:hover, nav button:hover {
+  opacity: 0.8;
+}
+
+nav button {
+  color: #ff4444;
+  font-weight: bold;
+}
+
+:root {
+  --primary-blue: #1a73e8;
+  --secondary-blue: #4285f4;
+  --light-blue: #e8f0fe;
+  --dark-blue: #1557b0;
+}
+
+.btn-primary {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.btn-primary:hover {
+  background-color: var(--dark-blue);
+  border-color: var(--dark-blue);
+}
+
+.btn-success {
+  background-color: var(--secondary-blue);
+  border-color: var(--secondary-blue);
+}
+
+.navbar {
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+  color: var(--dark-blue);
+  font-weight: 600;
+}
+
+/* Sport-themed decorative elements */
+.sport-bg {
+  position: relative;
+}
+
+.sport-bg::before {
+  content: "⚽";
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-size: 60px;  /* Larger size */
+  opacity: 0.3;     /* More visible */
+  transform: rotate(-15deg);
+  color: #1a73e8;   /* Blue color instead of black */
+}
+
+.sport-bg::after {
+  content: "🏃";
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  font-size: 60px;  /* Larger size */
+  opacity: 0.3;     /* More visible */
+  color: #1a73e8;   /* Blue color instead of black */
+}
+
+/* Card animations */
+@keyframes cardPop {
+  0% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.card {
+  animation: cardPop 0.3s ease-out;
+}
+
+/* Form styling */
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  padding: 10px 15px;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.25);
+}
+
+/* Page headers */
+h2.text-center {
+  color: var(--dark-blue);
+  font-weight: 700;
+  margin-bottom: 2rem;
+  position: relative;
+  display: inline-block;
+}
+
+h2.text-center::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background-color: var(--primary-blue);
+  border-radius: 2px;
+}
+
+/* Add these new styles for navigation buttons */
+.nav-button {
+  padding: 8px 16px;
+  margin: 0 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-button.primary {
+  background-color: #1a73e8;
+  color: white;
+  border: 2px solid #1a73e8;
+}
+
+.nav-button.primary:hover {
+  background-color: #1557b0;
+  border-color: #1557b0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(26, 115, 232, 0.2);
+}
+
+.nav-button.secondary {
+  background-color: white;
+  color: #1a73e8;
+  border: 2px solid #1a73e8;
+}
+
+.nav-button.secondary:hover {
+  background-color: #e8f0fe;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(26, 115, 232, 0.2);
+}
+
+.nav-button.danger {
+  background-color: white;
+  color: #dc3545;
+  border: 2px solid #dc3545;
+}
+
+.nav-button.danger:hover {
+  background-color: #dc3545;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
 }

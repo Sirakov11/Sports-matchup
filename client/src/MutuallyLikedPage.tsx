@@ -4,6 +4,7 @@ interface User {
   id: number
   name: string
   sport_name?: string
+  phone_number?: string
 }
 
 const MutuallyLikedPage = () => {
@@ -51,18 +52,18 @@ const MutuallyLikedPage = () => {
         <div className="row">
           {users.map((user) => (
             <div key={user.id} className="col-md-4 mb-3">
-              <div className="card">
+                <div className="card">
                 <div className="card-body">
                   <h5 className="card-title">{user.name}</h5>
                   <p className="card-text">Sport: {user.sport_name || "N/A"}</p>
-                  <button 
-                    className="btn btn-success w-100"
-                    onClick={() => handleStartChat(user.id)}
+                  <a 
+                  href={`viber://chat?number=%2B${user.phone_number}`} 
+                  className="btn btn-success w-100"
                   >
-                    Start Chat
-                  </button>
+                  Chat with {user.name}
+                  </a>
                 </div>
-              </div>
+                </div>
             </div>
           ))}
         </div>

@@ -35,13 +35,8 @@ const MatchupPage = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      alert("Like successful!"); // You might want to use a nicer notification system
+      alert("Like successful!"); 
       
-      // Optionally, you could:
-      // 1. Remove this user from the list
-      // 2. Move to the next user
-      // 3. Refresh the page
-      // window.location.reload();
 
     } catch (error) {
       console.error("Error liking user:", error);

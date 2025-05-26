@@ -9,37 +9,21 @@ interface User {
 
 const MutuallyLikedPage = () => {
   const [users, setUsers] = useState<User[]>([])
-
-  const handleStartChat = async (userId: number) => {
-    try {
-      const response = await fetch("http://localhost:3000/chat/start", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ userId: userId })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Handle chat initiation response here
-      // You might want to redirect to a chat page or open a chat window
-
-    } catch (error) {
-      console.error("Error starting chat:", error);
-      alert("Failed to start chat. Please try again.");
-    }
-  };
-
   useEffect(() => {
     fetch(`http://localhost:3000/mutuallyliked`, {
       credentials: 'include',
     })
       .then((res) => res.json())
-      .then((data) => setUsers(data))
+      .then((data) => {
+        // Filter out duplicate users by id
+        const uniqueUsers = Array.isArray(data)
+          ? data.filter(
+              (user: User, index: number, self: User[]) =>
+                self.findIndex((u) => u.id === user.id) === index
+            )
+          : [];
+        setUsers(uniqueUsers);
+      })
       .catch((err) => console.error("Error fetching mutual liked users:", err));
   }, []);
 
